@@ -1,0 +1,106 @@
+/* eslint-disable no-await-in-loop */
+/* eslint-disable no-restricted-syntax */
+
+'use strict';
+
+const MailService = use('Services/Mail/MailService');
+
+const personas = [
+  { name: 'Bryan Arroyave', email: 'bryan.arroyave@coxti.net' },
+  { name: 'Edisson Andrés', email: 'edisson.alvarez@coxti.com' },
+  { name: 'Manuel Galves', email: 'manuel.galvis@coxti.net' },
+  { name: 'Orpi Orpi', email: 'oscar.botero@coxti.net' },
+  { name: 'Mafe', email: 'maria.osorio@coxti.com' },
+  { name: 'Mauro', email: 'mauricio.lopez@coxti.com' },
+  { name: 'Camilo', email: 'andrews.soto@coxti.net' },
+  { name: 'Mounstro', email: 'diego.delosrios@coxti.net' },
+  { name: 'Jorge tapete', email: 'jorge.piedrahita@coxti.com' },
+  { name: 'Laura', email: 'laura.loaiza@coxti.net' },
+  { name: 'Kelly', email: 'kelly.orozco@coxti.net' },
+  { name: 'Brihan', email: 'brihan.r@coxti.com' },
+  { name: 'Paul', email: 'paul.posada@coxti.com' },
+  { name: 'Cristian', email: 'cristian.cruz@coxti.net' },
+  { name: 'Mike', email: 'mrivera@coxti.com' },
+  { name: 'Carlos', email: 'carlos.g@coxti.com' },
+  { name: 'Diego Rios', email: 'alejandro.rios@coxti.com' },
+  { name: 'Anderson', email: 'soportenivel1@coxti.com' },
+  { name: 'Niko Niko', email: 'nicolas.trujillo@coxti.net' },
+  { name: 'Eliana', email: 'eliana.florez@coxti.net' },
+  { name: 'Japo', email: 'manuelaristi09@gmail.com' },
+  { name: 'Marlon', email: 'marlon.nieves@coxti.net' },
+  { name: 'Sebas', email: 'jsebvel@gmail.com' },
+  { name: 'Lina', email: 'lina.arias@coxti.net' }
+];
+
+class RuebaController {
+  async create() {
+    const pairs = [];
+    const noSent = [];
+    const names = personas.map(per => per.name);
+    let pair = [];
+
+    do {
+      pair = [...names].sort(() => ((Math.random() > 0.5) ? 1 : -1));
+    } while (!this.verifyOrder(names, pair));
+    let current = null;
+    try {
+      for (const name of names) {
+        current = name;
+        const b = pair.shift();
+        pairs.push({ a: name, b });
+        await MailService.sendMail2(this.findEmail(name), `Mi so, le tocó ${b}`);
+      }
+    } catch (error) {
+      noSent.push(current);
+    }
+
+    return { noSent };
+  }
+
+  findEmail(name) {
+    return personas.find(p => p.name === name).email;
+  }
+
+  verifyOrder(names, pairs) {
+    for (let i = 0; i < names.length; i++) {
+      if (names[i] === pairs[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+}
+
+module.exports = RuebaController;
+
+
+// MailService
+
+const nodemailer = use('nodemailer');
+
+ async sendMail2(email, body) {
+    const transporter = await this.smtpConfig();
+    const data_sent = {
+      headers: { 'X-CMail-GroupName': 'oncredit' },
+      from: 'oncredit@coxti.net',
+      to: email,
+      subject: 'Amigo Secreto',
+      html: body,
+      attachments: []
+    };
+    return transporter.sendMail(data_sent);
+  }
+
+async smtpConfig() {
+    const smtp = nodemailer.createTransport({
+      host: Env.get('SMTP_HOST'),
+      port: Env.get('SMTP_PORT', 587),
+      secure: false,
+      auth: {
+        user: Env.get('MAIL_USERNAME'),
+        pass: Env.get('MAIL_PASSWORD')
+      },
+      tls: { rejectUnauthorized: false }
+    });
+    return smtp;
+  }
